@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 
 import android.os.RemoteException;
@@ -25,21 +27,26 @@ import com.noinnion.android.reader.api.provider.ISubscription;
 import com.noinnion.android.reader.api.provider.ITag;
 
 public class CnnExtension extends ReaderExtension {
-
-//	private final String	TAG	= CnnExtension.class.getSimpleName();
-
+	
+	/*
+	 * API call: http://www.newsblur.com/reader/feeds
+	 * Result: folders/0/Math/[ID] (ID = 1818)
+	 */
 	public String[][] CATEGORIES = new String [][] { 
 		 {"CAT:Politics", "Politics"},
 		 {"CAT:Sport", "Sport"},
          {"LABEL:Favorites", "Favorites"},
      };
-	
+		
+	/*
+	 * API call: http://www.newsblur.com/reader/feeds
+	 * Result: 
+	 *   feeds/[ID]/feed_address (http://feeds.feedburner.com/codinghorror - rss file)
+	 *   feeds/[ID]/feed_title ("Coding Horror")
+	 *   feeds/[ID]/feed_link (http://www.codinghorror.com/blog/ - site's link)
+	 */
 	public String[][] FEEDS = new String [][] { 
-		 {"FEED:http://www.engadget.com/rss.xml", "Top Stories", "http://edition.cnn.com/", ""},
-		 {"FEED:http://rss.cnn.com/rss/edition_world.rss", "World", "http://edition.cnn.com/WORLD/", "CAT:Politics"},
-		 {"FEED:http://rss.cnn.com/rss/edition_europe.rss", "Europe", "http://edition.cnn.com/EUROPE/", "CAT:Politics"},
-		 {"FEED:http://rss.cnn.com/rss/edition_sport.rss", "Football", "http://edition.cnn.com/FOOTBALL/", "CAT:Sport"},
-         {"FEED:http://rss.cnn.com/rss/edition_tennis.rss", "Tennis", "http://edition.cnn.com/TENNIS/", "CAT:Sport"},
+		 {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""},
      };
 	
 
@@ -103,54 +110,33 @@ public class CnnExtension extends ReaderExtension {
 		}
 	}
 
-	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {
+	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {	
 		AQuery aq = new AQuery(this);
-		aq.ajax(url, XmlPullParser.class, new AjaxCallback<XmlPullParser>() {
+		aq.ajax(url, JSONObject.class, new AjaxCallback<JSONObject>() {
 
-			public void callback(String url, XmlPullParser xpp, AjaxStatus status) {
+			public void callback(String url, JSONObject json, AjaxStatus status) {
 				List<IItem> items = new ArrayList<IItem>();
 				IItem item = null;
 
 				try {
-					int eventType = xpp.getEventType();
-					while (eventType != XmlPullParser.END_DOCUMENT) {
-
-						String tag = xpp.getName();
-						if (eventType == XmlPullParser.START_TAG) {
-							if ("item".equals(tag)) {
-								item = new IItem();
-								item.subUid = "feed/" + url;
-							} else if (item != null) {
-								if ("title".equals(tag)) {
-									item.title = xpp.nextText();
-								} else if ("description".equals(tag)) {
-									item.content = xpp.nextText();
-								} else if ("link".equals(tag)) {
-									item.link = xpp.nextText();
-									item.uid = String.valueOf(item.link.hashCode());
-								}
-							}
+					if (json != null) {
+						JSONArray arr = json.getJSONArray("stories");
+						for (int i=0; i<arr.length(); i++) {
+							item = new IItem();
+							item.subUid = "feed" + url;
+							item.title = arr.getJSONObject(i).getString("story_title");
+							item.content = arr.getJSONObject(i).getString("story_content");
+							item.link = arr.getJSONObject(i).getString("story_permalink");
+							item.uid = arr.getJSONObject(i).getString("id");
+							items.add(item);
 						}
-						else if (eventType == XmlPullParser.END_TAG) {
-							if ("item".equals(tag)) {
-								item.subUid = cat;
-								items.add(item);
-								item = null;
-							}
-						}
-
-						eventType = xpp.next();
+						handler.items(items);
 					}
-
-					handler.items(items);
 				} catch (Exception e) {
 					AQUtility.report(e);
 				}
-
 			}
-
 		});
-
 	}	
 	
 	@Override
