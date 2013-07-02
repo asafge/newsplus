@@ -30,7 +30,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 			finish();
 		}		
 		
-		setContentView(R.layout.login_cnn);
+		setContentView(R.layout.login_newsblur);
 		
 		findViewById(R.id.ok_button).setOnClickListener(this);
 	}
