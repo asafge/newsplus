@@ -14,6 +14,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.androidquery.AQuery;
@@ -56,13 +57,13 @@ public class LoginActivity extends Activity implements OnClickListener {
 		finish();
 	}
 	
-	private void login() {
+	private void login(String user, String pass) {
 		final Context c = getApplicationContext();
 		String url = "http://www.newsblur.com/api/login/"; 
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("User-Agent", System.getProperty("http.agent"));
-		params.put("username", "asafge");
-		params.put("password", "test");
+		params.put("username", user);
+		params.put("password", pass);
 
 		final AQuery aq = new AQuery(this);
 				
@@ -94,7 +95,9 @@ public class LoginActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.ok_button:
-				login();
+				EditText user = (EditText)findViewById(R.id.username_text);
+				EditText pass = (EditText)findViewById(R.id.password_text);
+				login(user.getText().toString(), pass.getText().toString());
 				break;
 		}
 	}
