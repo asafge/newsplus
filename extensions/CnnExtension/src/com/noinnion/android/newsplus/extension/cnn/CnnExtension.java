@@ -31,9 +31,9 @@ import com.noinnion.android.reader.api.provider.ITag;
 public class CnnExtension extends ReaderExtension {
 	
 	// {"CAT:Politics", "Politics"}
-	public String[][] CATEGORIES;
+	public ArrayList<String[]> CATEGORIES;
 		
-	// {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""}
+	// {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", "Politics"}
 	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
 	/*
@@ -53,12 +53,11 @@ public class CnnExtension extends ReaderExtension {
 						JSONObject feeds = json.getJSONObject("feeds");
 						if (folders.length() > 0)
 						{
-							CATEGORIES = new String [folders.length()][2];
 							for (int i=0; i<folders.length(); i++) {
 								JSONObject cat = folders.getJSONObject(i);
 								String catName = cat.keys().next().toString();
-								CATEGORIES[i][0] = "CAT:" + catName;
-								CATEGORIES[i][1] = catName;
+								String[] categoryItem = { "CAT:" + catName, catName };
+								CATEGORIES.add(categoryItem);
 								JSONArray feedsPerFolder = cat.getJSONArray(catName);
 								for (int j=0; j<feedsPerFolder.length(); j++) {
 									String feedID = feedsPerFolder.getString(j);
@@ -66,8 +65,8 @@ public class CnnExtension extends ReaderExtension {
 									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
-									String[] record = {feedUID, feedTitle, feedHtmlUrl, catName};
-									FEEDS.add(record);
+									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, catName};
+									FEEDS.add(feedItem);
 								}
 							}
 						}
@@ -92,7 +91,7 @@ public class CnnExtension extends ReaderExtension {
 		List<ITag> tags = new ArrayList<ITag>();
 		List<ISubscription> feeds = new ArrayList<ISubscription>();
 		
-		getCategoriesAndFeeds();
+		getCategoriesAndFeeds();		// TODO: Is this the right place to call?
 		
 		try {
 			for (String[] cat : CATEGORIES) {
@@ -103,7 +102,6 @@ public class CnnExtension extends ReaderExtension {
 				else if (tag.uid.startsWith("CAT")) tag.type = ITag.TYPE_FOLDER;
 				tags.add(tag);
 			}
-			
 			for (String[] feed : FEEDS) {
 				ISubscription sub = new ISubscription();
 				sub.uid = feed[0];
