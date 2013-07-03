@@ -34,7 +34,7 @@ public class CnnExtension extends ReaderExtension {
 	public ArrayList<String[]> CATEGORIES;
 		
 	// {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", "Politics"}
-	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
+	public ArrayList<String[]> FEEDS;
 	
 	/*
 	 * Get the categories (folders) and their feeds
@@ -50,7 +50,9 @@ public class CnnExtension extends ReaderExtension {
 				try {
 					if (json != null) {
 						JSONArray folders = json.getJSONArray("folders");
+						CATEGORIES = new ArrayList<String[]>();
 						JSONObject feeds = json.getJSONObject("feeds");
+						FEEDS = new ArrayList<String[]>();					
 						if (folders.length() > 0)
 						{
 							for (int i=0; i<folders.length(); i++) {
