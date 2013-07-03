@@ -171,12 +171,16 @@ public class CnnExtension extends ReaderExtension {
 					if (json != null) {
 						JSONArray arr = json.getJSONArray("stories");
 						for (int i=0; i<arr.length(); i++) {
+							JSONObject story = arr.getJSONObject(i);
 							item = new IItem();
 							item.subUid = "feed" + url;
-							item.title = arr.getJSONObject(i).getString("story_title");
-							item.content = arr.getJSONObject(i).getString("story_content");
-							item.link = arr.getJSONObject(i).getString("story_permalink");
-							item.uid = arr.getJSONObject(i).getString("id");
+							item.title = story.getString("story_title");
+							item.link = story.getString("story_permalink");
+							item.uid = story.getString("id");
+							item.author = story.getString("story_authors");
+							item.publishedTime = story.getLong("story_timestamp");
+							item.read = (story.getInt("read_status") == 1);
+							item.addCategory(cat);
 							items.add(item);
 						}
 						handler.items(items);
