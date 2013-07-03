@@ -2,7 +2,9 @@ package com.noinnion.android.newsplus.extension.cnn;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -43,13 +45,15 @@ public class CnnExtension extends ReaderExtension {
 	 * Result: folders/0/Math/[ID] (ID = 1818)
 	 */
 	private void getCategoriesAndFeeds() {
+		String url = "http://www.newsblur.com/reader/feeds?flat=true";
 		final AQuery aq = new AQuery(this);
+
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				try {
 					if (json != null) {
-						JSONArray folders = json.getJSONArray("folders");
+						JSONArray folders = json.getJSONArray("flat_folders");
 						CATEGORIES = new ArrayList<String[]>();
 						JSONObject feeds = json.getJSONObject("feeds");
 						FEEDS = new ArrayList<String[]>();					
@@ -67,7 +71,9 @@ public class CnnExtension extends ReaderExtension {
 									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
-									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, "CAT:" + catName};
+									if (catName != "")
+										catName = "CAT:" + catName;
+									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, catName};
 									FEEDS.add(feedItem);
 								}
 							}
@@ -83,7 +89,6 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		String url = "http://www.newsblur.com/reader/feeds";
 		cb.header("User-Agent", System.getProperty("http.agent"));
 		aq.ajax(url, JSONObject.class, cb);
 	}
@@ -154,7 +159,7 @@ public class CnnExtension extends ReaderExtension {
 	/*
 	 * Get the content of a single feed 
 	 * 
-	 * API call: http://www.newsblur.com/reader/feeds
+	 * API call: https://www.newsblur.com/reader/feeds
 	 * Result: 
 	 *   feeds/[ID]/feed_address (http://feeds.feedburner.com/codinghorror - rss file)
 	 *   feeds/[ID]/feed_title ("Coding Horror")
@@ -189,7 +194,8 @@ public class CnnExtension extends ReaderExtension {
 					{
 						status.getCode();
 					}
-				} catch (Exception e) {
+				}
+				catch (Exception e) {
 					AQUtility.report(e);
 				}
 			}
