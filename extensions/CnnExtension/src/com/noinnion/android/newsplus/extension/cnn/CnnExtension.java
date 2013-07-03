@@ -112,7 +112,9 @@ public class CnnExtension extends ReaderExtension {
 		}
 	}
 
-	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {	
+	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {
+		final AQuery aq = new AQuery(this);
+		
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
@@ -142,8 +144,6 @@ public class CnnExtension extends ReaderExtension {
 			}
 		};
 		cb.header("User-Agent", System.getProperty("http.agent"));
-		
-		final AQuery aq = new AQuery(this);
 		aq.ajax(url, JSONObject.class, cb);
 	}	
 	

@@ -60,12 +60,13 @@ public class LoginActivity extends Activity implements OnClickListener {
 		final Context c = getApplicationContext();
 		String url = "http://www.newsblur.com/api/login/"; 
 		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("User-Agent", System.getProperty("http.agent"));
 		params.put("username", "asafge");
 		params.put("password", "test");
 
 		final AQuery aq = new AQuery(this);
-		aq.ajax(url, params, JSONObject.class, new AjaxCallback<JSONObject>() {
-
+				
+		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				try
@@ -78,16 +79,15 @@ public class LoginActivity extends Activity implements OnClickListener {
 					else
 					{
 						Toast.makeText(aq.getContext(), "Error:" + status.getCode(), Toast.LENGTH_LONG).show();
-						Prefs.setLoggedIn(c, true);
-						setResult(ReaderExtension.RESULT_LOGIN);
-						finish();
 					}
 				}
 				catch (JSONException e) {
 					AQUtility.report(e);
 				}
 			}
-		});
+		};
+		cb.header("User-Agent", System.getProperty("http.agent"));
+		aq.ajax(url, params, JSONObject.class, cb);
 	}
 	
 	@Override
