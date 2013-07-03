@@ -14,6 +14,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.widget.Toast;
 
 import com.androidquery.AQuery;
 import com.androidquery.callback.AjaxCallback;
@@ -62,7 +63,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 		params.put("username", "asafge");
 		params.put("password", "test");
 
-		AQuery aq = new AQuery(this);
+		final AQuery aq = new AQuery(this);
 		aq.ajax(url, params, JSONObject.class, new AjaxCallback<JSONObject>() {
 
 			@Override
@@ -70,6 +71,13 @@ public class LoginActivity extends Activity implements OnClickListener {
 				try
 				{
 					if (json != null && json.getString("authenticated") == "true") {
+						Prefs.setLoggedIn(c, true);
+						setResult(ReaderExtension.RESULT_LOGIN);
+						finish();
+					}
+					else
+					{
+						Toast.makeText(aq.getContext(), "Error:" + status.getCode(), Toast.LENGTH_LONG).show();
 						Prefs.setLoggedIn(c, true);
 						setResult(ReaderExtension.RESULT_LOGIN);
 						finish();

@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParser;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.androidquery.AQuery;
 import com.androidquery.callback.AjaxCallback;
@@ -111,13 +112,11 @@ public class CnnExtension extends ReaderExtension {
 	}
 
 	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {	
-		AQuery aq = new AQuery(this);
-		aq.ajax(url, JSONObject.class, new AjaxCallback<JSONObject>() {
-
+		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
+			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				List<IItem> items = new ArrayList<IItem>();
 				IItem item = null;
-
 				try {
 					if (json != null) {
 						JSONArray arr = json.getJSONArray("stories");
@@ -132,11 +131,19 @@ public class CnnExtension extends ReaderExtension {
 						}
 						handler.items(items);
 					}
+					else
+					{
+						status.getCode();
+					}
 				} catch (Exception e) {
 					AQUtility.report(e);
 				}
 			}
-		});
+		};
+		cb.header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0.2) Gecko/20100101 Firefox/6.0.2");
+		
+		final AQuery aq = new AQuery(this);
+		aq.ajax(url, JSONObject.class, cb);
 	}	
 	
 	@Override
