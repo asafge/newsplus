@@ -11,6 +11,7 @@ import org.xmlpull.v1.XmlPullParser;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
+import android.webkit.WebView;
 import android.widget.Toast;
 
 import com.androidquery.AQuery;
@@ -140,7 +141,7 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		cb.header("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:6.0.2) Gecko/20100101 Firefox/6.0.2");
+		cb.header("User-Agent", System.getProperty("http.agent"));
 		
 		final AQuery aq = new AQuery(this);
 		aq.ajax(url, JSONObject.class, cb);
