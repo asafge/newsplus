@@ -30,13 +30,19 @@ import com.noinnion.android.reader.api.provider.ITag;
 
 public class CnnExtension extends ReaderExtension {
 	
-	@Override
-	public void onCreate() {
-		super.onCreate();
-		this.getCategories();
-	}
+	// {"CAT:Politics", "Politics"}
+	public String[][] CATEGORIES;
+		
+	// {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""}
+	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
-	private void getCategories() {
+	/*
+	 * Get the categories (folders) and their feeds
+	 * 
+	 * API call: http://www.newsblur.com/reader/feeds
+	 * Result: folders/0/Math/[ID] (ID = 1818)
+	 */
+	private void getCategoriesAndFeeds() {
 		final AQuery aq = new AQuery(this);
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
@@ -68,7 +74,7 @@ public class CnnExtension extends ReaderExtension {
 					}
 					else
 					{
-						status.getCode();
+						status.getCode();		// TODO: Check for 403
 					}
 				}
 				catch (Exception e) {
@@ -80,33 +86,13 @@ public class CnnExtension extends ReaderExtension {
 		cb.header("User-Agent", System.getProperty("http.agent"));
 		aq.ajax(url, JSONObject.class, cb);
 	}
-		
-	/*
-	 * API call: http://www.newsblur.com/reader/feeds
-	 * Result: folders/0/Math/[ID] (ID = 1818)
-	 */
-	public String[][] CATEGORIES;
-		
-	/*
-	 * API call: http://www.newsblur.com/reader/feeds
-	 * Result: 
-	 *   feeds/[ID]/feed_address (http://feeds.feedburner.com/codinghorror - rss file)
-	 *   feeds/[ID]/feed_title ("Coding Horror")
-	 *   feeds/[ID]/feed_link (http://www.codinghorror.com/blog/ - site's link)
-	 *   
-	 * An item looks like this: 
-	 *   {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""} 
-	 */
-	
-	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
-	
 
 	@Override
 	public void handleReaderList(ITagListHandler tagHandler, ISubscriptionListHandler subHandler, long syncTime) throws IOException, ReaderException {
 		List<ITag> tags = new ArrayList<ITag>();
 		List<ISubscription> feeds = new ArrayList<ISubscription>();
 		
-		getCategories();
+		getCategoriesAndFeeds();
 		
 		try {
 			for (String[] cat : CATEGORIES) {
@@ -163,6 +149,15 @@ public class CnnExtension extends ReaderExtension {
 		}
 	}
 
+	/*
+	 * Get the content of a single feed 
+	 * 
+	 * API call: http://www.newsblur.com/reader/feeds
+	 * Result: 
+	 *   feeds/[ID]/feed_address (http://feeds.feedburner.com/codinghorror - rss file)
+	 *   feeds/[ID]/feed_title ("Coding Horror")
+	 *   feeds/[ID]/feed_link (http://www.codinghorror.com/blog/ - site's link)
+	 */
 	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {
 		final AQuery aq = new AQuery(this);
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
