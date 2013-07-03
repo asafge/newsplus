@@ -30,15 +30,62 @@ import com.noinnion.android.reader.api.provider.ITag;
 
 public class CnnExtension extends ReaderExtension {
 	
+	@Override
+	public void onCreate() {
+		super.onCreate();
+		this.getCategories();
+	}
+	
+	private void getCategories() {
+		final AQuery aq = new AQuery(this);
+		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
+			@Override
+			public void callback(String url, JSONObject json, AjaxStatus status) {
+				try {
+					if (json != null) {
+						JSONArray folders = json.getJSONArray("folders");
+						JSONObject feeds = json.getJSONObject("feeds");
+						if (folders.length() > 0)
+						{
+							CATEGORIES = new String [folders.length()][2];
+							for (int i=0; i<folders.length(); i++) {
+								JSONObject cat = folders.getJSONObject(i);
+								String catName = cat.keys().next().toString();
+								CATEGORIES[i][0] = "CAT:" + catName;
+								CATEGORIES[i][1] = catName;
+								JSONArray feedsPerFolder = cat.getJSONArray(catName);
+								for (int j=0; j<feedsPerFolder.length(); j++) {
+									String feedID = feedsPerFolder.getString(j);
+									JSONObject f = (JSONObject)feeds.get(feedID);
+									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
+									String feedTitle = f.getString("feed_title");
+									String feedHtmlUrl = f.getString("feed_link");
+									String[] record = {feedUID, feedTitle, feedHtmlUrl, catName};
+									FEEDS.add(record);
+								}
+							}
+						}
+					}
+					else
+					{
+						status.getCode();
+					}
+				}
+				catch (Exception e) {
+					AQUtility.report(e);
+				}
+			}
+		};
+		String url = "http://www.newsblur.com/reader/feeds";
+		cb.header("User-Agent", System.getProperty("http.agent"));
+		aq.ajax(url, JSONObject.class, cb);
+	}
+		
 	/*
 	 * API call: http://www.newsblur.com/reader/feeds
 	 * Result: folders/0/Math/[ID] (ID = 1818)
 	 */
-	public String[][] CATEGORIES = new String [][] { 
-		 {"CAT:Politics", "Politics"},
-		 {"CAT:Sport", "Sport"},
-         {"LABEL:Favorites", "Favorites"},
-     };
+	public String[][] CATEGORIES;
 		
 	/*
 	 * API call: http://www.newsblur.com/reader/feeds
@@ -46,16 +93,20 @@ public class CnnExtension extends ReaderExtension {
 	 *   feeds/[ID]/feed_address (http://feeds.feedburner.com/codinghorror - rss file)
 	 *   feeds/[ID]/feed_title ("Coding Horror")
 	 *   feeds/[ID]/feed_link (http://www.codinghorror.com/blog/ - site's link)
+	 *   
+	 * An item looks like this: 
+	 *   {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""} 
 	 */
-	public String[][] FEEDS = new String [][] { 
-		 {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", ""},
-     };
+	
+	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
 
 	@Override
 	public void handleReaderList(ITagListHandler tagHandler, ISubscriptionListHandler subHandler, long syncTime) throws IOException, ReaderException {
 		List<ITag> tags = new ArrayList<ITag>();
 		List<ISubscription> feeds = new ArrayList<ISubscription>();
+		
+		getCategories();
 		
 		try {
 			for (String[] cat : CATEGORIES) {
@@ -114,7 +165,6 @@ public class CnnExtension extends ReaderExtension {
 
 	public void parseItemList(String url, final IItemListHandler handler, final String cat) throws IOException, ReaderException {
 		final AQuery aq = new AQuery(this);
-		
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
@@ -157,6 +207,7 @@ public class CnnExtension extends ReaderExtension {
 		// TODO Auto-generated method stub
 		return false;
 	}
+	 
 
 	@Override
 	public boolean markAsUnread(String[]  itemUids, String[]  subUids, boolean keepUnread) throws IOException, ReaderException {
