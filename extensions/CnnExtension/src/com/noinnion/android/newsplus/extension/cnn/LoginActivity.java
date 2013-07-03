@@ -22,7 +22,6 @@ import com.androidquery.callback.AjaxCallback;
 import com.androidquery.callback.AjaxStatus;
 import com.androidquery.util.AQUtility;
 import com.noinnion.android.reader.api.ReaderExtension;
-import com.noinnion.android.reader.api.provider.IItem;
 
 public class LoginActivity extends Activity implements OnClickListener {
 	
@@ -39,14 +38,12 @@ public class LoginActivity extends Activity implements OnClickListener {
 		if (action != null && action.equals(ReaderExtension.ACTION_LOGOUT)) {
 			logout();
 		}
-		
 		if (Prefs.isLoggedIn(c)) {
 			setResult(RESULT_OK);
 			finish();
 		}		
 		
 		setContentView(R.layout.login_newsblur);
-		
 		findViewById(R.id.ok_button).setOnClickListener(this);
 	}
 
@@ -57,9 +54,13 @@ public class LoginActivity extends Activity implements OnClickListener {
 		finish();
 	}
 	
+	/*
+	 * Login function - an API call to Newsblur.
+	 * Displays a long toast for errors.
+	 */
 	private void login(String user, String pass) {
 		final Context c = getApplicationContext();
-		String url = "http://www.newsblur.com/api/login/"; 
+		String url = "https://www.newsblur.com/api/login/"; 
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("User-Agent", System.getProperty("http.agent"));
 		params.put("username", user);
@@ -79,7 +80,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 					}
 					else
 					{
-						Toast.makeText(aq.getContext(), "Error:" + status.getCode(), Toast.LENGTH_LONG).show();
+						Toast.makeText(aq.getContext(), "Error:" + status.getMessage(), Toast.LENGTH_LONG).show();
 					}
 				}
 				catch (JSONException e) {
