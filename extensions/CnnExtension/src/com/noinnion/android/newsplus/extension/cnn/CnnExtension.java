@@ -67,7 +67,7 @@ public class CnnExtension extends ReaderExtension {
 									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
-									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, catName};
+									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, "CAT:" + catName};
 									FEEDS.add(feedItem);
 								}
 							}
@@ -117,10 +117,11 @@ public class CnnExtension extends ReaderExtension {
 			
 			tagHandler.tags(tags);
 			subHandler.subscriptions(feeds);
-		} catch (RemoteException e) {
+		}
+		catch (RemoteException e) {
 			throw new ReaderException("remote connection error", e);			
 		}
-	}	
+	}
 	
 	@Override
 	public void handleItemList(final IItemListHandler handler, long syncTime) throws IOException, ReaderException {
@@ -144,7 +145,8 @@ public class CnnExtension extends ReaderExtension {
 			} else if (uid.startsWith("LABEL:")) {
 				Log.e("Test", "No url for label");
 			}
-		} catch (RemoteException e1) {
+		}
+		catch (RemoteException e1) {
 			e1.printStackTrace();
 		}
 	}
