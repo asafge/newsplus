@@ -68,9 +68,9 @@ public class CnnExtension extends ReaderExtension {
 							
 							Iterator<?> keys = folders.keys();
 							while (keys.hasNext()) {
-								String catName = (String)keys.next();
+								String catName = ((String)keys.next()).trim();
 								JSONArray feedsPerFolder = folders.getJSONArray(catName);
-								if (!TextUtils.isEmpty(catName.trim())) {
+								if (!TextUtils.isEmpty(catName)) {
 									// Create the category
 									String[] categoryItem = { "CAT:" + catName, catName };
 									CATEGORIES.add(categoryItem);
@@ -109,8 +109,8 @@ public class CnnExtension extends ReaderExtension {
 		List<ITag> tags = new ArrayList<ITag>();
 		List<ISubscription> feeds = new ArrayList<ISubscription>();
 		
-		getCategoriesAndFeeds();
 		try {
+			getCategoriesAndFeeds();
 			for (String[] cat : CATEGORIES) {
 				ITag tag = new ITag();
 				tag.uid = cat[0];
