@@ -14,6 +14,7 @@ import org.xmlpull.v1.XmlPullParser;
 
 import android.content.Context;
 import android.os.RemoteException;
+import android.os.TransactionTooLargeException;
 import android.text.TextUtils;
 import android.util.Log;
 import android.webkit.WebView;
@@ -43,15 +44,24 @@ public class CnnExtension extends ReaderExtension {
 	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
 	/*
+	 * Add needed params to the callback (User-agent, cookie) 
+	 */
+	private AjaxCallback<JSONObject> wrapCallback(AjaxCallback<JSONObject> cb) {
+		final Context c = getApplicationContext();
+		cb.header("User-Agent", Prefs.USER_AGENT);
+		String[] sessionID = Prefs.getSessionID(c);
+		cb.cookie(sessionID[0], sessionID[1]);
+		return cb;
+	}
+	
+	/*
 	 * Get the categories (folders) and their feeds
 	 * 
 	 * API call: http://www.newsblur.com/reader/feeds
 	 * Result: folders/0/Math/[ID] (ID = 1818)
 	 */
 	private void getCategoriesAndFeeds() {
-		final Context c = getApplicationContext();
 		final AQuery aq = new AQuery(this);
-
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
@@ -94,10 +104,10 @@ public class CnnExtension extends ReaderExtension {
 			}
 		};
 		String url = "http://www.newsblur.com/reader/feeds?flat=true";
-		cb.header("User-Agent", Prefs.USER_AGENT);
-		String[] sessionID = Prefs.getSessionID(c);
-		cb.cookie(sessionID[0], sessionID[1]);
+		wrapCallback(cb);
+		Object asyncLock = new Object();
 		aq.ajax(url, JSONObject.class, cb);
+		cb.block();
 	}
 	
 	/*
@@ -208,13 +218,17 @@ public class CnnExtension extends ReaderExtension {
 						status.getCode();
 					}
 				}
+				catch (TransactionTooLargeException e) {
+					AQUtility.report(e);
+				}
 				catch (Exception e) {
 					AQUtility.report(e);
 				}
 			}
 		};
-		cb.header("User-Agent", Prefs.USER_AGENT);
+		wrapCallback(cb);
 		aq.ajax(url, JSONObject.class, cb);
+		cb.block();
 	}	
 	
 	@Override
