@@ -70,7 +70,7 @@ public class CnnExtension extends ReaderExtension {
 							while (keys.hasNext()) {
 								String catName = (String)keys.next();
 								JSONArray feedsPerFolder = folders.getJSONArray(catName);
-								if (catName.trim().length() > 0) {
+								if (!TextUtils.isEmpty(catName.trim())) {
 									// Create the category
 									String[] categoryItem = { "CAT:" + catName, catName };
 									CATEGORIES.add(categoryItem);
