@@ -37,10 +37,10 @@ public class CnnExtension extends ReaderExtension {
 	// TODO: Use one AQuery for the entire class?
 	
 	// {"CAT:Politics", "Politics"}
-	public ArrayList<String[]> CATEGORIES;
+	public ArrayList<String[]> CATEGORIES = new ArrayList<String[]>();
 		
 	// {"FEED:http://www.newsblur.com/reader/feed/1818:id", "Coding horror", "http://www.codinghorror.com/blog/", "Politics"}
-	public ArrayList<String[]> FEEDS;
+	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
 	/*
 	 * Get the categories (folders) and their feeds
@@ -63,8 +63,6 @@ public class CnnExtension extends ReaderExtension {
 						try {
 							JSONObject feeds = json.getJSONObject("feeds");
 							JSONObject folders = json.getJSONObject("flat_folders");
-							CATEGORIES = new ArrayList<String[]>();
-							FEEDS = new ArrayList<String[]>();
 							
 							Iterator<?> keys = folders.keys();
 							while (keys.hasNext()) {
@@ -193,7 +191,7 @@ public class CnnExtension extends ReaderExtension {
 						for (int i=0; i<arr.length(); i++) {
 							JSONObject story = arr.getJSONObject(i);
 							IItem item = new IItem();
-							item.subUid = url;
+							item.subUid = "FEED:" + url;
 							item.title = story.getString("story_title");
 							item.link = story.getString("story_permalink");
 							item.uid = story.getString("id");
