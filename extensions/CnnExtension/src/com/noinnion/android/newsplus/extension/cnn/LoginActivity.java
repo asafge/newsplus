@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.http.cookie.Cookie;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -30,9 +31,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setResult(RESULT_CANCELED);
-		
 		final Context c = getApplicationContext();
+		setResult(RESULT_CANCELED);	
 		
 		String action = getIntent().getAction();
 		if (action != null && action.equals(ReaderExtension.ACTION_LOGOUT)) {
@@ -42,7 +42,6 @@ public class LoginActivity extends Activity implements OnClickListener {
 			setResult(RESULT_OK);
 			finish();
 		}		
-		
 		setContentView(R.layout.login_newsblur);
 		findViewById(R.id.ok_button).setOnClickListener(this);
 	}
@@ -50,6 +49,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	private void logout() {
 		final Context c = getApplicationContext();
 		Prefs.setLoggedIn(c, false);
+		Prefs.setSessionID(c, "");
 		setResult(ReaderExtension.RESULT_LOGOUT);
 		finish();
 	}
@@ -60,14 +60,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 	 */
 	private void login(String user, String pass) {
 		final Context c = getApplicationContext();
-		String url = "https://www.newsblur.com/api/login/"; 
-		Map<String, Object> params = new HashMap<String, Object>();
-		params.put("User-Agent", System.getProperty("http.agent"));
-		params.put("username", user);
-		params.put("password", pass);
-
 		final AQuery aq = new AQuery(this);
-				
+		
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
@@ -75,6 +69,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 				{
 					if (json != null && json.getString("authenticated") == "true") {
 						Prefs.setLoggedIn(c, true);
+						Prefs.setSessionID(c, status.getCookies().get(0).toString());
 						setResult(ReaderExtension.RESULT_LOGIN);
 						finish();
 					}
@@ -88,6 +83,10 @@ public class LoginActivity extends Activity implements OnClickListener {
 				}
 			}
 		};
+		String url = "https://www.newsblur.com/api/login/"; 
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("username", user);
+		params.put("password", pass);
 		cb.header("User-Agent", System.getProperty("http.agent"));
 		aq.ajax(url, params, JSONObject.class, cb);
 	}

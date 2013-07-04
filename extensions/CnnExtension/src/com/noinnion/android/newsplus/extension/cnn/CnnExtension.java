@@ -10,6 +10,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 
+import android.content.Context;
 import android.os.RemoteException;
 import android.text.TextUtils;
 import android.util.Log;
@@ -45,7 +46,7 @@ public class CnnExtension extends ReaderExtension {
 	 * Result: folders/0/Math/[ID] (ID = 1818)
 	 */
 	private void getCategoriesAndFeeds() {
-		String url = "http://www.newsblur.com/reader/feeds?flat=true";
+		final Context c = getApplicationContext();
 		final AQuery aq = new AQuery(this);
 
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
@@ -53,7 +54,7 @@ public class CnnExtension extends ReaderExtension {
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				try {
 					if (json != null) {
-						JSONArray folders = json.getJSONArray("flat_folders");
+						JSONArray folders = json.getJSONArray("folders");
 						CATEGORIES = new ArrayList<String[]>();
 						JSONObject feeds = json.getJSONObject("feeds");
 						FEEDS = new ArrayList<String[]>();					
@@ -65,14 +66,14 @@ public class CnnExtension extends ReaderExtension {
 								String[] categoryItem = { "CAT:" + catName, catName };
 								CATEGORIES.add(categoryItem);
 								JSONArray feedsPerFolder = cat.getJSONArray(catName);
+								if (catName != "")
+									catName = "CAT:" + catName;
 								for (int j=0; j<feedsPerFolder.length(); j++) {
 									String feedID = feedsPerFolder.getString(j);
 									JSONObject f = (JSONObject)feeds.get(feedID);
 									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
-									if (catName != "")
-										catName = "CAT:" + catName;
 									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, catName};
 									FEEDS.add(feedItem);
 								}
@@ -89,17 +90,21 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
+		String url = "http://www.newsblur.com/reader/feeds";
 		cb.header("User-Agent", System.getProperty("http.agent"));
+		cb.header("Cookies", Prefs.getSessionID(c));
 		aq.ajax(url, JSONObject.class, cb);
 	}
 
+	/*
+	 * Sync feeds/folders + handle the entire read list
+	 */
 	@Override
 	public void handleReaderList(ITagListHandler tagHandler, ISubscriptionListHandler subHandler, long syncTime) throws IOException, ReaderException {
 		List<ITag> tags = new ArrayList<ITag>();
 		List<ISubscription> feeds = new ArrayList<ISubscription>();
 		
-		getCategoriesAndFeeds();		// TODO: Is this the right place to call?
-		
+		getCategoriesAndFeeds();
 		try {
 			for (String[] cat : CATEGORIES) {
 				ITag tag = new ITag();
@@ -119,7 +124,6 @@ public class CnnExtension extends ReaderExtension {
 				}
 				feeds.add(sub);
 			}
-			
 			tagHandler.tags(tags);
 			subHandler.subscriptions(feeds);
 		}
@@ -128,6 +132,9 @@ public class CnnExtension extends ReaderExtension {
 		}
 	}
 	
+	/*
+	 * Handle a single item list (a feed or a folder)
+	 */
 	@Override
 	public void handleItemList(final IItemListHandler handler, long syncTime) throws IOException, ReaderException {
 		try {
@@ -137,17 +144,20 @@ public class CnnExtension extends ReaderExtension {
 					String url = f[0].replace("FEED:", "");
 					parseItemList(url, handler, f[0]);
 				}
-			} else if (uid.startsWith("CAT:")) {
+			}
+			else if (uid.startsWith("CAT:")) {
 				for (String[] f : FEEDS) {
 					if (f[2].equals(uid)) {
 						String url = f[0].replace("FEED:", "");
 						parseItemList(url, handler, f[0]);						
 					}
 				}
-			} else if (uid.startsWith("FEED:")) {
+			}
+			else if (uid.startsWith("FEED:")) {
 				String url = handler.stream().replace("FEED:", "");
 				parseItemList(url, handler, handler.stream());
-			} else if (uid.startsWith("LABEL:")) {
+			}
+			else if (uid.startsWith("LABEL:")) {
 				Log.e("Test", "No url for label");
 			}
 		}
@@ -200,7 +210,7 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		cb.header("User-Agent", System.getProperty("http.agent"));
+		cb.header("User-Agent", "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36");
 		aq.ajax(url, JSONObject.class, cb);
 	}	
 	
