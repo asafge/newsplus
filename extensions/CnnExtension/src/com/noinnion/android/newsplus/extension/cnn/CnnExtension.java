@@ -238,7 +238,32 @@ public class CnnExtension extends ReaderExtension {
 
 	@Override
 	public boolean markAsRead(String[]  itemUids, String[]  subUIds) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
+		final AQuery aq = new AQuery(this);
+		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
+			@Override
+			public void callback(String url, JSONObject json, AjaxStatus status) {
+				try {
+					if (json != null) {
+						status.getCode();
+					}
+					else
+					{
+						status.getCode();
+					}
+				}
+				catch (Exception e) {
+					AQUtility.report(e);
+				}
+			}
+		};
+		wrapCallback(cb);
+		String url = "http://www.newsblur.com/reader/mark_story_as_read?";
+		for (String item : itemUids)
+			url += ("story_id=" + item + "&");
+		String feedID = "1234";
+		url += "feed_id=" + feedID;
+		aq.ajax(url, JSONObject.class, cb);
+		cb.block();
 		return false;
 	}
 	 
