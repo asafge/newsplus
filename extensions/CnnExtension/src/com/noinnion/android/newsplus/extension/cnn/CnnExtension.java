@@ -3,10 +3,12 @@ package com.noinnion.android.newsplus.extension.cnn;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 
@@ -32,6 +34,7 @@ import com.noinnion.android.reader.api.provider.ISubscription;
 import com.noinnion.android.reader.api.provider.ITag;
 
 public class CnnExtension extends ReaderExtension {
+	// TODO: Use one AQuery for the entire class?
 	
 	// {"CAT:Politics", "Politics"}
 	public ArrayList<String[]> CATEGORIES;
@@ -52,50 +55,52 @@ public class CnnExtension extends ReaderExtension {
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
-				try {
-					if (json != null) {
-						JSONArray folders = json.getJSONArray("folders");
-						CATEGORIES = new ArrayList<String[]>();
-						JSONObject feeds = json.getJSONObject("feeds");
-						FEEDS = new ArrayList<String[]>();					
-						if (folders.length() > 0)
-						{
-							for (int i=0; i<folders.length(); i++) {
-								JSONObject cat = folders.getJSONObject(i);
-								String catName = cat.keys().next().toString();
-								String[] categoryItem = { "CAT:" + catName, catName };
-								CATEGORIES.add(categoryItem);
-								JSONArray feedsPerFolder = cat.getJSONArray(catName);
-								if (catName != "")
-									catName = "CAT:" + catName;
-								for (int j=0; j<feedsPerFolder.length(); j++) {
-									String feedID = feedsPerFolder.getString(j);
-									JSONObject f = (JSONObject)feeds.get(feedID);
-									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
-									String feedTitle = f.getString("feed_title");
-									String feedHtmlUrl = f.getString("feed_link");
-									String[] feedItem = {feedUID, feedTitle, feedHtmlUrl, catName};
-									FEEDS.add(feedItem);
-								}
-							}
-						}
+					if (json == null) {
+						status.getCode();		// TODO: Check for 403
 					}
 					else
 					{
-						status.getCode();		// TODO: Check for 403
+						CATEGORIES = new ArrayList<String[]>();
+						FEEDS = new ArrayList<String[]>();
+						try {
+							JSONObject feeds = json.getJSONObject("feeds");
+							JSONObject folders = json.getJSONObject("flat_folders");
+							
+							Iterator<?> keys = folders.keys();
+							while (keys.hasNext()) {
+								String catName = (String)keys.next();
+								JSONArray feedsPerFolder = folders.getJSONArray(catName);
+								if (catName.trim().length() > 0) {
+									// Create the category
+									String[] categoryItem = { "CAT:" + catName, catName };
+									CATEGORIES.add(categoryItem);
+									catName = "CAT:" + catName;
+								}
+								// Add all feeds in this category
+								for (int i=0; i<feedsPerFolder.length(); i++) {
+									String feedID = feedsPerFolder.getString(i);
+									JSONObject f = feeds.getJSONObject(feedID);
+									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
+									String feedTitle = f.getString("feed_title");
+									String feedHtmlUrl = f.getString("feed_link");
+									String[] fi = { feedUID, feedTitle, feedHtmlUrl, catName };
+									FEEDS.add(fi);
+								}
+							}
+						}
+						catch (JSONException e) {
+							AQUtility.report(e);
+						}
 					}
-				}
-				catch (Exception e) {
-					AQUtility.report(e);
-				}
 			}
 		};
-		String url = "http://www.newsblur.com/reader/feeds";
-		cb.header("User-Agent", System.getProperty("http.agent"));
-		cb.header("Cookies", Prefs.getSessionID(c));
+		String url = "http://www.newsblur.com/reader/feeds?flat=true";
+		cb.header("User-Agent", Prefs.USER_AGENT);
+		String[] sessionID = Prefs.getSessionID(c);
+		cb.cookie(sessionID[0], sessionID[1]);
 		aq.ajax(url, JSONObject.class, cb);
 	}
-
+	
 	/*
 	 * Sync feeds/folders + handle the entire read list
 	 */
@@ -181,14 +186,13 @@ public class CnnExtension extends ReaderExtension {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				List<IItem> items = new ArrayList<IItem>();
-				IItem item = null;
 				try {
 					if (json != null) {
 						JSONArray arr = json.getJSONArray("stories");
 						for (int i=0; i<arr.length(); i++) {
 							JSONObject story = arr.getJSONObject(i);
-							item = new IItem();
-							item.subUid = "feed" + url;
+							IItem item = new IItem();
+							item.subUid = url;
 							item.title = story.getString("story_title");
 							item.link = story.getString("story_permalink");
 							item.uid = story.getString("id");
@@ -210,7 +214,7 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		cb.header("User-Agent", "Mozilla/5.0 (X11; Linux i686) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/28.0.1500.52 Safari/537.36");
+		cb.header("User-Agent", Prefs.USER_AGENT);
 		aq.ajax(url, JSONObject.class, cb);
 	}	
 	

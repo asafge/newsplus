@@ -1,11 +1,8 @@
 package com.noinnion.android.newsplus.extension.cnn;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import org.apache.http.cookie.Cookie;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -49,7 +46,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 	private void logout() {
 		final Context c = getApplicationContext();
 		Prefs.setLoggedIn(c, false);
-		Prefs.setSessionID(c, "");
+		Prefs.setSessionID(c, "", "");
 		setResult(ReaderExtension.RESULT_LOGOUT);
 		finish();
 	}
@@ -68,8 +65,8 @@ public class LoginActivity extends Activity implements OnClickListener {
 				try
 				{
 					if (json != null && json.getString("authenticated") == "true") {
+						Prefs.setSessionID(c, status.getCookies().get(0).getName(), status.getCookies().get(0).getValue());
 						Prefs.setLoggedIn(c, true);
-						Prefs.setSessionID(c, status.getCookies().get(0).toString());
 						setResult(ReaderExtension.RESULT_LOGIN);
 						finish();
 					}
@@ -87,7 +84,7 @@ public class LoginActivity extends Activity implements OnClickListener {
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("username", user);
 		params.put("password", pass);
-		cb.header("User-Agent", System.getProperty("http.agent"));
+		cb.header("User-Agent", Prefs.USER_AGENT);
 		aq.ajax(url, params, JSONObject.class, cb);
 	}
 	
@@ -95,9 +92,10 @@ public class LoginActivity extends Activity implements OnClickListener {
 	public void onClick(View v) {
 		switch (v.getId()) {
 			case R.id.ok_button:
-				EditText user = (EditText)findViewById(R.id.username_text);
-				EditText pass = (EditText)findViewById(R.id.password_text);
-				login(user.getText().toString(), pass.getText().toString());
+				//EditText user = (EditText)findViewById(R.id.username_text);
+				//EditText pass = (EditText)findViewById(R.id.password_text);
+				//login(user.getText().toString(), pass.getText().toString());
+				login("asafge", "lCD%Ftk73Nda");
 				break;
 		}
 	}
