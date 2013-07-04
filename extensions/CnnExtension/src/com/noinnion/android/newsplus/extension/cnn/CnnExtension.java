@@ -60,11 +60,11 @@ public class CnnExtension extends ReaderExtension {
 					}
 					else
 					{
-						CATEGORIES = new ArrayList<String[]>();
-						FEEDS = new ArrayList<String[]>();
 						try {
 							JSONObject feeds = json.getJSONObject("feeds");
 							JSONObject folders = json.getJSONObject("flat_folders");
+							CATEGORIES = new ArrayList<String[]>();
+							FEEDS = new ArrayList<String[]>();
 							
 							Iterator<?> keys = folders.keys();
 							while (keys.hasNext()) {
