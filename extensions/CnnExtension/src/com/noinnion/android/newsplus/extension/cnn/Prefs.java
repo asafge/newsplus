@@ -1,8 +1,5 @@
 package com.noinnion.android.newsplus.extension.cnn;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import android.content.Context;
 
 import com.noinnion.android.reader.api.ExtensionPrefs;

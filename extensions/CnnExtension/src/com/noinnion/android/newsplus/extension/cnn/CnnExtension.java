@@ -44,17 +44,6 @@ public class CnnExtension extends ReaderExtension {
 	public ArrayList<String[]> FEEDS = new ArrayList<String[]>();
 	
 	/*
-	 * Add needed params to the callback (User-agent, cookie) 
-	 */
-	private AjaxCallback<JSONObject> wrapCallback(AjaxCallback<JSONObject> cb) {
-		final Context c = getApplicationContext();
-		cb.header("User-Agent", Prefs.USER_AGENT);
-		String[] sessionID = Prefs.getSessionID(c);
-		cb.cookie(sessionID[0], sessionID[1]);
-		return cb;
-	}
-	
-	/*
 	 * Get the categories (folders) and their feeds
 	 * 
 	 * API call: http://www.newsblur.com/reader/feeds
@@ -65,11 +54,7 @@ public class CnnExtension extends ReaderExtension {
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
-					if (json == null) {
-						status.getCode();		// TODO: Check for 403
-					}
-					else
-					{
+					if (APICalls.isJSONResponseValid(json, status)) {
 						try {
 							JSONObject feeds = json.getJSONObject("feeds");
 							JSONObject folders = json.getJSONObject("flat_folders");
@@ -89,7 +74,7 @@ public class CnnExtension extends ReaderExtension {
 								for (int i=0; i<feedsPerFolder.length(); i++) {
 									String feedID = feedsPerFolder.getString(i);
 									JSONObject f = feeds.getJSONObject(feedID);
-									String feedUID = "FEED:http://www.newsblur.com/reader/feed/" + feedID + ":id";
+									String feedUID = "FEED:" + APICalls.getSingleFeedURL(feedID);
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
 									String[] fi = { feedUID, feedTitle, feedHtmlUrl, catName };
@@ -103,10 +88,9 @@ public class CnnExtension extends ReaderExtension {
 					}
 			}
 		};
-		String url = "http://www.newsblur.com/reader/feeds?flat=true";
-		wrapCallback(cb);
-		Object asyncLock = new Object();
-		aq.ajax(url, JSONObject.class, cb);
+		final Context c = getApplicationContext();
+		APICalls.wrapCallback(c, cb);
+		aq.ajax(APICalls.API_URL_FOLDERS_AND_FEEDS, JSONObject.class, cb);
 		cb.block();
 	}
 	
@@ -133,9 +117,8 @@ public class CnnExtension extends ReaderExtension {
 				sub.uid = feed[0];
 				sub.title = feed[1];
 				sub.htmlUrl = feed[2];
-				if (!TextUtils.isEmpty(feed[3])) {
+				if (!TextUtils.isEmpty(feed[3]))
 					sub.addCategory(feed[3]);
-				}
 				feeds.add(sub);
 			}
 			tagHandler.tags(tags);
@@ -196,7 +179,7 @@ public class CnnExtension extends ReaderExtension {
 			public void callback(String url, JSONObject json, AjaxStatus status) {
 				List<IItem> items = new ArrayList<IItem>();
 				try {
-					if (json != null) {
+					if (APICalls.isJSONResponseValid(json, status)) {
 						JSONArray arr = json.getJSONArray("stories");
 						for (int i=0; i<arr.length(); i++) {
 							JSONObject story = arr.getJSONObject(i);
@@ -213,10 +196,6 @@ public class CnnExtension extends ReaderExtension {
 						}
 						handler.items(items);
 					}
-					else
-					{
-						status.getCode();
-					}
 				}
 				catch (TransactionTooLargeException e) {
 					AQUtility.report(e);
@@ -226,7 +205,8 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		wrapCallback(cb);
+		final Context c = getApplicationContext();
+		APICalls.wrapCallback(c, cb);
 		aq.ajax(url, JSONObject.class, cb);
 		cb.block();
 	}	
@@ -256,8 +236,9 @@ public class CnnExtension extends ReaderExtension {
 				}
 			}
 		};
-		wrapCallback(cb);
-		String url = "http://www.newsblur.com/reader/mark_story_as_read?";
+		final Context c = getApplicationContext();
+		APICalls.wrapCallback(c, cb);
+		String url = APICalls.API_URL_MARK_STORY_AS_READ;
 		for (String item : itemUids)
 			url += ("story_id=" + item + "&");
 		String feedID = "1234";
@@ -303,6 +284,4 @@ public class CnnExtension extends ReaderExtension {
 		// TODO Auto-generated method stub
 		return false;
 	}
-	
-
 }

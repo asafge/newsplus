@@ -80,12 +80,12 @@ public class LoginActivity extends Activity implements OnClickListener {
 				}
 			}
 		};
-		String url = "https://www.newsblur.com/api/login/"; 
+
 		Map<String, Object> params = new HashMap<String, Object>();
 		params.put("username", user);
 		params.put("password", pass);
 		cb.header("User-Agent", Prefs.USER_AGENT);
-		aq.ajax(url, params, JSONObject.class, cb);
+		aq.ajax(APICalls.API_URL_LOGIN, params, JSONObject.class, cb);
 	}
 	
 	@Override
