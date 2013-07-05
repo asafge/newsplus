@@ -35,7 +35,7 @@ import com.noinnion.android.reader.api.provider.ISubscription;
 import com.noinnion.android.reader.api.provider.ITag;
 
 public class CnnExtension extends ReaderExtension {
-	// TODO: Use one AQuery for the entire class?
+	// TODO: Use one AQuery and context for the entire class?
 	
 	// {"CAT:Politics", "Politics"}
 	public ArrayList<String[]> CATEGORIES = new ArrayList<String[]>();
@@ -74,7 +74,7 @@ public class CnnExtension extends ReaderExtension {
 								for (int i=0; i<feedsPerFolder.length(); i++) {
 									String feedID = feedsPerFolder.getString(i);
 									JSONObject f = feeds.getJSONObject(feedID);
-									String feedUID = "FEED:" + APICalls.getSingleFeedURL(feedID);
+									String feedUID = "FEED:" + APICalls.getFeedUrlFromFeedId(feedID);
 									String feedTitle = f.getString("feed_title");
 									String feedHtmlUrl = f.getString("feed_link");
 									String[] fi = { feedUID, feedTitle, feedHtmlUrl, catName };
@@ -198,6 +198,7 @@ public class CnnExtension extends ReaderExtension {
 					}
 				}
 				catch (TransactionTooLargeException e) {
+					// TODO: Prevent this from happening
 					AQUtility.report(e);
 				}
 				catch (Exception e) {
@@ -222,66 +223,59 @@ public class CnnExtension extends ReaderExtension {
 		AjaxCallback<JSONObject> cb = new AjaxCallback<JSONObject>() {
 			@Override
 			public void callback(String url, JSONObject json, AjaxStatus status) {
-				try {
-					if (json != null) {
-						status.getCode();
+				if (APICalls.isJSONResponseValid(json, status)) {
+					try {
+						result = json.getJSONObject("result");
 					}
-					else
-					{
-						status.getCode();
+					catch (JSONException e) {
+						AQUtility.report(e);
 					}
-				}
-				catch (Exception e) {
-					AQUtility.report(e);
 				}
 			}
 		};
 		final Context c = getApplicationContext();
-		APICalls.wrapCallback(c, cb);
-		String url = APICalls.API_URL_MARK_STORY_AS_READ;
-		for (String item : itemUids)
-			url += ("story_id=" + item + "&");
-		String feedID = "1234";
-		url += "feed_id=" + feedID;
-		aq.ajax(url, JSONObject.class, cb);
-		cb.block();
-		return false;
+		try {
+			APICalls.wrapCallback(c, cb);
+			String url = APICalls.API_URL_MARK_STORY_AS_READ;
+			for (String item : itemUids)
+				url += ("story_id=" + item + "&");
+			url += "feed_id=" + APICalls.getFeedIdFromFeedUrl(subUIds[0]);
+			aq.ajax(url, JSONObject.class, cb);
+			cb.block();
+			return (cb.getResult().getString("result") == "ok");
+		}
+		catch (JSONException e) {
+			return false;
+		}
 	}
 	 
-
 	@Override
 	public boolean markAsUnread(String[]  itemUids, String[]  subUids, boolean keepUnread) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean markAllAsRead(String s, String t, long syncTime) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean editItemTag(String[]  itemUids, String[]  subUids, String[]  addTags, String[]  removeTags) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean editSubscription(String uid, String title, String url, String[] tag, int action, long syncTime) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean renameTag(String tagUid, String oldLabel, String newLabel) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean disableTag(String tagUid, String label) throws IOException, ReaderException {
-		// TODO Auto-generated method stub
 		return false;
 	}
 }
